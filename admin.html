@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Free Fire Tournament</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600&family=Audiowide&display=swap" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<style>
+body{
+margin:0;
+font-family:'Exo 2', sans-serif;
+background:linear-gradient(180deg,#000000,#001a00);
+color:#00ff99;
+}
+
+.header{
+padding:15px;
+text-align:center;
+font-family:'Audiowide';
+font-size:22px;
+background:#000;
+box-shadow:0 0 15px #00ff99;
+}
+
+.container{
+padding:15px;
+}
+
+.card{
+background:#0a0a0a;
+padding:15px;
+margin-bottom:15px;
+border-radius:12px;
+box-shadow:0 0 10px #00ff99;
+}
+
+input,select{
+width:100%;
+padding:10px;
+margin:6px 0;
+background:#111;
+border:1px solid #00ff99;
+color:#00ff99;
+border-radius:8px;
+}
+
+button{
+width:100%;
+padding:12px;
+background:#00ff99;
+border:none;
+color:#000;
+font-weight:bold;
+border-radius:8px;
+margin-top:8px;
+cursor:pointer;
+}
+
+button:hover{
+background:#00cc77;
+}
+
+.stat{
+display:flex;
+justify-content:space-between;
+margin:8px 0;
+}
+
+.hidden{
+display:none;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+<i class="fa fa-shield-halved"></i> ADMIN PANEL
+</div>
+
+<div class="container">
+
+<!-- Login -->
+<div class="card" id="loginBox">
+<h3>Admin Login</h3>
+<input type="text" id="adminId" placeholder="Admin ID">
+<input type="password" id="adminPass" placeholder="Password">
+<button onclick="adminLogin()">Login</button>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" class="hidden">
+
+<!-- Create Tournament -->
+<div class="card">
+<h3>Create Tournament</h3>
+<input type="text" id="title" placeholder="Tournament Title">
+<input type="number" id="entryFee" placeholder="Entry Fee">
+<input type="number" id="prizePool" placeholder="Prize Pool">
+<input type="number" id="slots" placeholder="Total Slots">
+<input type="datetime-local" id="matchTime">
+<input type="text" id="banner" placeholder="Banner Image URL">
+<button onclick="createTournament()">Create</button>
+</div>
+
+<!-- Room Control -->
+<div class="card">
+<h3>Room ID Control</h3>
+<input type="text" id="roomTournamentId" placeholder="Tournament ID">
+<input type="text" id="roomId" placeholder="Room ID">
+<input type="text" id="roomPass" placeholder="Room Password">
+<select id="reveal">
+<option value="false">Hide</option>
+<option value="true">Reveal</option>
+</select>
+<button onclick="updateRoom()">Update Room</button>
+</div>
+
+<!-- Declare Winner -->
+<div class="card">
+<h3>Declare Winner</h3>
+<input type="text" id="winnerTid" placeholder="Tournament ID">
+<input type="text" id="winnerUid" placeholder="Winner User ID">
+<input type="number" id="winAmount" placeholder="Winning Amount">
+<button onclick="declareWinner()">Declare</button>
+</div>
+
+<!-- Wallet Control -->
+<div class="card">
+<h3>Add Balance</h3>
+<input type="text" id="walletUid" placeholder="User ID">
+<input type="number" id="walletAmount" placeholder="Amount">
+<button onclick="addBalance()">Add</button>
+</div>
+
+<!-- Earnings -->
+<div class="card">
+<h3>Earnings Dashboard</h3>
+<div class="stat"><span>Total Entry</span><span id="totalEntry">0</span></div>
+<div class="stat"><span>Total Prize</span><span id="totalPrize">0</span></div>
+<div class="stat"><span>Net Profit</span><span id="netProfit">0</span></div>
+</div>
+
+</div>
+</div>
+
+<script>
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyCipJHTT26lc0VZfNwd1vB_9Ry_n15kUBI",
+  authDomain: "prime-pro-league.firebaseapp.com",
+  databaseURL: "https://prime-pro-league-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "prime-pro-league",
+  storageBucket: "prime-pro-league.firebasestorage.app",
+  messagingSenderId: "451131242519",
+  appId: "1:451131242519:web:32c2957300cdd010b70452"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Admin Login
+function adminLogin(){
+let id=document.getElementById("adminId").value;
+let pass=document.getElementById("adminPass").value;
+
+db.ref("admin/credentials").once("value",snap=>{
+let data=snap.val();
+if(data && id==data.id && pass==data.password){
+document.getElementById("loginBox").style.display="none";
+document.getElementById("dashboard").classList.remove("hidden");
+}else{
+alert("Invalid Login");
+}
+});
+}
+
+// Create Tournament
+function createTournament(){
+let id="T"+Date.now();
+db.ref("tournaments/"+id).set({
+title:title.value,
+entryFee:Number(entryFee.value),
+prizePool:Number(prizePool.value),
+totalSlots:Number(slots.value),
+joinedCount:0,
+status:"upcoming",
+matchTime:matchTime.value,
+banner:banner.value,
+roomId:"",
+roomPass:"",
+reveal:false
+});
+alert("Tournament Created");
+}
+
+// Update Room
+function updateRoom(){
+db.ref("tournaments/"+roomTournamentId.value).update({
+roomId:roomId.value,
+roomPass:roomPass.value,
+reveal:(reveal.value=="true")
+});
+alert("Room Updated");
+}
+
+// Declare Winner
+function declareWinner(){
+let tid=winnerTid.value;
+let uid=winnerUid.value;
+let amount=Number(winAmount.value);
+
+db.ref("users/"+uid+"/wallet").once("value",snap=>{
+let current=snap.val()||0;
+db.ref("users/"+uid).update({
+wallet:current+amount,
+wins:(snap.val()?.wins||0)+1
+});
+});
+
+db.ref("tournaments/"+tid).update({
+status:"completed"
+});
+
+db.ref("earnings/prize").transaction(n=> (n||0)+amount);
+
+alert("Winner Declared");
+}
+
+// Add Balance
+function addBalance(){
+let uid=walletUid.value;
+let amt=Number(walletAmount.value);
+
+db.ref("users/"+uid+"/wallet").once("value",snap=>{
+let current=snap.val()||0;
+db.ref("users/"+uid).update({
+wallet:current+amt
+});
+});
+
+db.ref("earnings/entry").transaction(n=> (n||0)+amt);
+
+alert("Balance Added");
+}
+
+// Earnings
+db.ref("earnings").on("value",snap=>{
+let data=snap.val()||{};
+let entry=data.entry||0;
+let prize=data.prize||0;
+document.getElementById("totalEntry").innerText=entry;
+document.getElementById("totalPrize").innerText=prize;
+document.getElementById("netProfit").innerText=entry-prize;
+});
+</script>
+
+</body>
+</html>
